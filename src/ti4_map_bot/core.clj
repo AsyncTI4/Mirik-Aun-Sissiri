@@ -1,11 +1,11 @@
 ;; SPDX-License-Identifier: MIT OR 0BSD
 (ns ti4-map-bot.core
   (:require
+   [clojure.data.json :as json]
    [clojure.edn :as edn]
    [clojure.core.async :refer [chan close!]]
    [discljord.messaging :as discord-rest]
    [discljord.connections :as discord-ws]
-   [discljord.formatting :refer [mention-user]]
    [discljord.events :refer [message-pump!]]
    [ring.util.response :refer [response]]
    [org.httpkit.server :refer [run-server]]
@@ -15,22 +15,12 @@
    [ti4.map GameSaveLoadManager]))
 
 (def state (atom nil))
-
 (def bot-id (atom nil))
-
 (def config (edn/read-string (slurp "config.edn")))
 
 (defmulti handle-event
   "Event handling multi method. Dispatches on the type of the event."
   (fn [type _data] type))
-
-(defn random-response [user]
-  (str (rand-nth (:responses config)) ", " (mention-user user) \!))
-
-(defmethod handle-event :message-create
-  [_ {:keys [channel-id author mentions] :as _data}]
-  (when (some #{@bot-id} (map :id mentions))
-    (discord-rest/create-message! (:rest @state) channel-id :content (random-response author))))
 
 (defmethod handle-event :ready
   [_ _]
@@ -59,21 +49,18 @@
   (close! events))
 
 
-
-(defn hello-world []
-  (response "Hello World!"))
-
-(defn game-data-test [req]
+(defn game-data-test
+  "A test to see if we can use the same libraries as the bot."
+  [req]
   (let [game (GameSaveLoadManager/loadMapJSONString (slurp (:body req)))]
     (.name game)))
 
 (defn get-user-name [id]
-  (response (str @(discord-rest/get-guild-member! (:rest @state) 1023607282421993602 id))))
+  (response (json/write-str @(discord-rest/get-guild-member! (:rest @state) (:server config) id))))
 
 (defroutes web-handler
-  (GET "/hello" [] (hello-world))
   (GET "/user/:id" [id] (get-user-name id))
-  (POST "/game" req (game-data-test req)))
+  )
 
 
 (defn -main [& args]
