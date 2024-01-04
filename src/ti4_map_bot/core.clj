@@ -48,13 +48,6 @@
   (discord-ws/disconnect-bot! gateway)
   (close! events))
 
-
-(defn game-data-test
-  "A test to see if we can use the same libraries as the bot."
-  [req]
-  (let [game (GameSaveLoadManager/loadMapJSONString (slurp (:body req)))]
-    (.name game)))
-
 (defn get-user-name [id]
   (response (json/write-str @(discord-rest/get-guild-member! (:rest @state) (:server config) id))))
 
