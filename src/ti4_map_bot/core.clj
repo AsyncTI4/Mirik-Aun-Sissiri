@@ -11,8 +11,7 @@
    [org.httpkit.server :refer [run-server]]
    [compojure.core :refer :all]
     )
-  (:import
-   [ti4.map GameSaveLoadManager]))
+  )
 
 (def state (atom nil))
 (def bot-id (atom nil))
